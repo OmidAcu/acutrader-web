@@ -69,6 +69,7 @@ async function openCheckout(priceId) {
 // Wire “Start” buttons
 document.querySelectorAll('button[data-plan]').forEach((btn) => {
   btn.addEventListener('click', () => {
+    console.log('[AcuTrader] plan button clicked', btn.dataset.plan);
     const annual = toggle?.checked;
     const priceId = annual ? btn.dataset.annualProduct : btn.dataset.monthlyProduct;
     openCheckout(priceId);
