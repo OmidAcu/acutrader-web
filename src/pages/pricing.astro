@@ -1,0 +1,85 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <main class="max-w-6xl mx-auto px-6 py-16">
+    <h1 class="text-4xl font-bold text-center">Pricing</h1>
+    <p class="text-center text-gray-600 mt-2">14-day money-back guarantee. 72-hour renewal grace period.</p>
+
+    <!-- Toggle -->
+    <div class="flex items-center justify-center gap-3 mt-8">
+      <span class="text-sm">Monthly</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input id="billing-toggle" type="checkbox" class="sr-only peer">
+        <div class="w-14 h-7 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+        <div class="-ml-11 w-6 h-6 bg-white rounded-full shadow translate-x-0 peer-checked:translate-x-7 transition-transform mt-0.5"></div>
+      </label>
+      <span class="text-sm">Annual <span class="text-green-600 font-semibold">–30%</span></span>
+    </div>
+
+    <!-- Plans -->
+    <section class="grid md:grid-cols-3 gap-6 mt-10">
+      <!-- NT -->
+      <article class="border rounded-2xl p-6 shadow-sm">
+        <h2 class="text-xl font-semibold">NinjaTrader</h2>
+        <p class="text-gray-600 mt-1">Use AcuTrader on NinjaTrader.</p>
+        <div class="mt-4">
+          <span class="text-3xl font-bold"><span class="js-nt-price">39.99</span></span>
+          <span class="text-gray-500 text-sm">/ <span class="js-billing-label">month</span></span>
+        </div>
+        <button
+          class="mt-6 w-full rounded-xl bg-blue-600 text-white py-3 font-medium hover:bg-blue-700"
+          data-plan="nt"
+          data-monthly-product="pri_01k79gnc7d2x9c1wtbp3e2bkp9"
+          data-annual-product="pri_01k79hw1jgfpm6pnzctng8m12e"
+        >
+          Start
+        </button>
+      </article>
+
+      <!-- TradingView -->
+      <article class="border rounded-2xl p-6 shadow-sm">
+        <h2 class="text-xl font-semibold">TradingView</h2>
+        <p class="text-gray-600 mt-1">Use AcuTrader on TradingView.</p>
+        <div class="mt-4">
+          <span class="text-3xl font-bold"><span class="js-tv-price">39.99</span></span>
+          <span class="text-gray-500 text-sm">/ <span class="js-billing-label">month</span></span>
+        </div>
+        <button
+          class="mt-6 w-full rounded-xl bg-blue-600 text-white py-3 font-medium hover:bg-blue-700"
+          data-plan="tv"
+          data-monthly-product="pri_01k79hmvtb3v5f5azzw1cwrf1z"
+          data-annual-product="pri_01k79hs1x9nfdyb2k3vdwz97yq"
+        >
+          Start
+        </button>
+      </article>
+
+      <!-- Dual -->
+      <article class="border rounded-2xl p-6 shadow-sm ring-2 ring-blue-600">
+        <h2 class="text-xl font-semibold">Dual (NT + TV)</h2>
+        <p class="text-gray-600 mt-1">Best value: both platforms.</p>
+        <div class="mt-4">
+          <span class="text-3xl font-bold"><span class="js-dual-price">59.99</span></span>
+          <span class="text-gray-500 text-sm">/ <span class="js-billing-label">month</span></span>
+        </div>
+        <button
+          class="mt-6 w-full rounded-xl bg-blue-600 text-white py-3 font-medium hover:bg-blue-700"
+          data-plan="dual"
+          data-monthly-product="pri_01k79j4a5yakg2y9ht6tt7yvk8"
+          data-annual-product="pri_01k79j5n0tq6a70tka20d3652c"
+        >
+          Start
+        </button>
+      </article>
+    </section>
+
+    <p class="text-sm text-gray-500 mt-8">
+      * Annual pricing reflects a 30% discount. Guarantee: full refund within 14 days of first purchase; renewals have a 72-hour grace refund window.
+    </p>
+  </main>
+
+  <!-- Client script -->
+  <script type="module" src="/scripts/checkout.js"></script>
+</Layout>
