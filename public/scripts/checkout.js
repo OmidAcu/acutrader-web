@@ -7,19 +7,21 @@ const priceNT = document.querySelector('.js-nt-price');
 const priceTV = document.querySelector('.js-tv-price');
 const priceDual = document.querySelector('.js-dual-price');
 
+console.log('[AcuTrader] checkout.js loaded');
+
 // Update displayed prices when Monthly/Annual toggled
 function applyPricing() {
   const annual = toggle?.checked;
-  labelEls.forEach(el => (el.textContent = annual ? 'year' : 'month'));
+  labelEls.forEach((el) => (el.textContent = annual ? 'year' : 'month'));
   if (annual) {
-    // 39.99 * 12 * 0.7 ≈ 335 ; dual 59.99 * 12 * 0.7 ≈ 504
-    priceNT && (priceNT.textContent = '335');
-    priceTV && (priceTV.textContent = '335');
-    priceDual && (priceDual.textContent = '504');
+    // 39.99 * 12 * 0.7 ≈ 335 ; dual ≈ 504
+    if (priceNT) priceNT.textContent = '335';
+    if (priceTV) priceTV.textContent = '335';
+    if (priceDual) priceDual.textContent = '504';
   } else {
-    priceNT && (priceNT.textContent = '39.99');
-    priceTV && (priceTV.textContent = '39.99');
-    priceDual && (priceDual.textContent = '59.99');
+    if (priceNT) priceNT.textContent = '39.99';
+    if (priceTV) priceTV.textContent = '39.99';
+    if (priceDual) priceDual.textContent = '59.99';
   }
 }
 applyPricing();
@@ -29,6 +31,7 @@ toggle && toggle.addEventListener('change', applyPricing);
 let paddleReady = false;
 async function loadPaddle() {
   if (paddleReady && window.Paddle) return window.Paddle;
+
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
@@ -38,15 +41,10 @@ async function loadPaddle() {
   });
 
   // Sandbox + initialize with your PUBLIC client token
-  window.Paddle.Environment.set('sandbox'); // remove/disable in production
+  window.Paddle.Environment.set('sandbox'); // remove in production
   window.Paddle.Initialize({
-    token: 'test_f2d749debb7c87af3996d052dfd', // keep quotes
+    token: 'test_f2d749debb7c87af3996d052dfd',
   });
-
-  // Helpful console logging while testing
-  window.Paddle.Events.on('checkout.loaded', (e) => console.log('Paddle loaded', e));
-  window.Paddle.Events.on('checkout.completed', (e) => console.log('Paddle completed', e));
-  window.Paddle.Events.on('checkout.error', (e) => console.error('Paddle error', e));
 
   paddleReady = true;
   return window.Paddle;
@@ -61,8 +59,6 @@ async function openCheckout(priceId) {
   }
   Paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
-    // You can optionally pass customer: { email: 'test@example.com' }
-    // and settings: { displayMode: 'overlay' } (overlay is default)
   });
 }
 
