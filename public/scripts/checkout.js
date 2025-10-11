@@ -1,4 +1,5 @@
-// Simple monthly/annual toggle + Paddle checkout opener
+// public/scripts/checkout.js
+// Paddle v2-compatible checkout loader + pricing toggle
 
 const toggle = document.getElementById('billing-toggle');
 const labelEls = document.querySelectorAll('.js-billing-label');
@@ -6,57 +7,70 @@ const priceNT = document.querySelector('.js-nt-price');
 const priceTV = document.querySelector('.js-tv-price');
 const priceDual = document.querySelector('.js-dual-price');
 
+// Update displayed prices when Monthly/Annual toggled
 function applyPricing() {
-  const annual = toggle.checked;
+  const annual = toggle?.checked;
   labelEls.forEach(el => (el.textContent = annual ? 'year' : 'month'));
-  // Monthly: NT/TV 39.99, Dual 59.99
-  // Annual: apply 30% discount: 39.99*12*0.7 ≈ 335 (display rounded), dual ≈ 504
   if (annual) {
-    priceNT.textContent = '335';
-    priceTV.textContent = '335';
-    priceDual.textContent = '504';
+    // 39.99 * 12 * 0.7 ≈ 335 ; dual 59.99 * 12 * 0.7 ≈ 504
+    priceNT && (priceNT.textContent = '335');
+    priceTV && (priceTV.textContent = '335');
+    priceDual && (priceDual.textContent = '504');
   } else {
-    priceNT.textContent = '39.99';
-    priceTV.textContent = '39.99';
-    priceDual.textContent = '59.99';
+    priceNT && (priceNT.textContent = '39.99');
+    priceTV && (priceTV.textContent = '39.99');
+    priceDual && (priceDual.textContent = '59.99');
   }
 }
 applyPricing();
-toggle?.addEventListener('change', applyPricing);
+toggle && toggle.addEventListener('change', applyPricing);
 
-// Lazy-load Paddle (Billing/Checkout v2) when a button is clicked.
-// NOTE: Replace the token & product IDs with your Paddle sandbox values.
-let paddleLoaded = false;
-
+// Lazy-load Paddle v2
+let paddleReady = false;
 async function loadPaddle() {
-  if (paddleLoaded) return window.Paddle;
-  const script = document.createElement('script');
-  script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-  document.head.appendChild(script);
-  await new Promise(res => (script.onload = res));
-  // IMPORTANT: set sandbox + initialize with your public token from Paddle dashboard
-  window.Paddle.Environment.set('sandbox'); // remove in production
-  // Replace with your Paddle "Client-side token" (public)
-  window.Paddle.Initialize({ token: 'test_f2d749debb7c87af3996d052dfd' });
-  paddleLoaded = true;
+  if (paddleReady && window.Paddle) return window.Paddle;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+
+  // Sandbox + initialize with your PUBLIC client token
+  window.Paddle.Environment.set('sandbox'); // remove/disable in production
+  window.Paddle.Initialize({
+    token: 'test_f2d749debb7c87af3996d052dfd', // keep quotes
+  });
+
+  // Helpful console logging while testing
+  window.Paddle.Events.on('checkout.loaded', (e) => console.log('Paddle loaded', e));
+  window.Paddle.Events.on('checkout.completed', (e) => console.log('Paddle completed', e));
+  window.Paddle.Events.on('checkout.error', (e) => console.error('Paddle error', e));
+
+  paddleReady = true;
   return window.Paddle;
 }
 
-async function openCheckout(productId) {
+// Open checkout for a given *priceId* (v2)
+async function openCheckout(priceId) {
   const Paddle = await loadPaddle();
-  // Minimal checkout; you can add customer email, passthrough, etc.
-  Paddle.Checkout.open({ product: productId });
+  if (!priceId || priceId.startsWith('REPLACE')) {
+    alert('Configure your Paddle price IDs on the buttons.');
+    return;
+  }
+  Paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    // You can optionally pass customer: { email: 'test@example.com' }
+    // and settings: { displayMode: 'overlay' } (overlay is default)
+  });
 }
 
-// Wire buttons
-document.querySelectorAll('button[data-plan]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const annual = toggle.checked;
-    const productId = annual ? btn.dataset.annualProduct : btn.dataset.monthlyProduct;
-    if (!productId || productId.startsWith('REPLACE')) {
-      alert('Configure your Paddle product IDs in the button data attributes.');
-      return;
-    }
-    openCheckout(productId);
+// Wire “Start” buttons
+document.querySelectorAll('button[data-plan]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const annual = toggle?.checked;
+    const priceId = annual ? btn.dataset.annualProduct : btn.dataset.monthlyProduct;
+    openCheckout(priceId);
   });
 });
