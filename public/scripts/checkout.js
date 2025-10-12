@@ -58,16 +58,26 @@ async function openCheckout(priceId) {
     return;
   }
 
-  Paddle.Checkout.open({
-  items: [{ priceId, quantity: 1 }],
-  settings: {
-    successUrl: 'https://acutrader-web.pages.dev/thank-you',
-    cancelUrl: 'https://acutrader-web.pages.dev/pricing',
-    displayMode: 'overlay' // optional (overlay is default)
-  }
-});
+  const origin = window.location.origin; // e.g. https://acutrader-web.pages.dev
 
+  Paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+
+    // v2 SDK settings (client-side)
+    settings: {
+      displayMode: 'overlay',
+      successUrl: `${origin}/thank-you`,
+      cancelUrl: `${origin}/pricing`,
+    },
+
+    // some Paddle environments expect these under 'transaction' too
+    transaction: {
+      successUrl: `${origin}/thank-you`,
+      cancelUrl: `${origin}/pricing`,
+    },
+  });
 }
+
 
 // Wire “Start” buttons
 document.querySelectorAll('button[data-plan]').forEach((btn) => {
