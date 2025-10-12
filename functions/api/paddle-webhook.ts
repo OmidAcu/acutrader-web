@@ -107,18 +107,28 @@ function cryptoRandom(len: number) {
 interface Env { DB: D1Database }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
-  let body = '';
-  try {
-    body = await request.text();
-  } catch {
-    body = '';
+  // Read body (works for both GET with no body and POST with JSON)
+  const raw = await request.text().catch(() => "");
+  let eventType = `webhook:${request.method.toLowerCase()}`;
+
+  // Try to detect Paddle event type from JSON
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      // Paddle v2 test events usually include "event_type" or "type"
+      const candidate = data?.event_type ?? data?.type;
+      if (typeof candidate === "string" && candidate.length) {
+        eventType = candidate;
+      }
+    } catch {
+      // keep eventType as webhook:get/post
+    }
   }
-  if (!body) body = JSON.stringify({ note: 'no body' });
 
   await env.DB
-    .prepare('INSERT INTO events (type, body) VALUES (?1, ?2)')
-    .bind(`webhook:${request.method.toLowerCase()}`, body)
+    .prepare("INSERT INTO events (type, body) VALUES (?1, ?2)")
+    .bind(eventType, raw || "{}")
     .run();
 
-  return new Response('ok', { status: 200 });
+  return new Response("ok", { status: 200 });
 };
