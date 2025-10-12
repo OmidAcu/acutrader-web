@@ -60,22 +60,23 @@ async function openCheckout(priceId) {
 
   const origin = window.location.origin; // e.g. https://acutrader-web.pages.dev
 
+  try {
   Paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
-
-    // v2 SDK settings (client-side)
     settings: {
       displayMode: 'overlay',
       successUrl: `${origin}/thank-you`,
       cancelUrl: `${origin}/pricing`,
     },
-
-    // some Paddle environments expect these under 'transaction' too
     transaction: {
       successUrl: `${origin}/thank-you`,
       cancelUrl: `${origin}/pricing`,
     },
   });
+} catch (e) {
+  console.error('[AcuTrader] Paddle checkout error', e);
+}
+
 }
 
 
