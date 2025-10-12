@@ -57,9 +57,16 @@ async function openCheckout(priceId) {
     alert('Configure your Paddle price IDs on the buttons.');
     return;
   }
+
   Paddle.Checkout.open({
-    items: [{ priceId, quantity: 1 }],
-  });
+  items: [{ priceId, quantity: 1 }],
+  settings: {
+    successUrl: 'https://acutrader-web.pages.dev/thank-you',
+    cancelUrl: 'https://acutrader-web.pages.dev/pricing',
+    displayMode: 'overlay' // optional (overlay is default)
+  }
+});
+
 }
 
 // Wire “Start” buttons
