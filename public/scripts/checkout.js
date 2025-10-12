@@ -58,27 +58,22 @@ async function openCheckout(priceId) {
     return;
   }
 
-  const origin = window.location.origin; // e.g. https://acutrader-web.pages.dev
+  const origin = window.location.origin;
 
   try {
-  Paddle.Checkout.open({
-    items: [{ priceId, quantity: 1 }],
-    settings: {
-      displayMode: 'overlay',
-      successUrl: `${origin}/thank-you`,
-      cancelUrl: `${origin}/pricing`,
-    },
-    transaction: {
-      successUrl: `${origin}/thank-you`,
-      cancelUrl: `${origin}/pricing`,
-    },
-  });
-} catch (e) {
-  console.error('[AcuTrader] Paddle checkout error', e);
+    Paddle.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+      settings: {
+        displayMode: 'overlay',
+        successUrl: `${origin}/thank-you`,
+        // cancelUrl removed on purpose due to v2 validation noise
+      },
+      // transaction block not needed for v2 SDK calls; remove to avoid conflicts
+    });
+  } catch (e) {
+    console.error('[AcuTrader] Paddle checkout error', e);
+  }
 }
-
-}
-
 
 // Wire “Start” buttons
 document.querySelectorAll('button[data-plan]').forEach((btn) => {
