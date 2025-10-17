@@ -1,7 +1,10 @@
 // functions/api/paddle-webhook.ts
 /// <reference types="@cloudflare/workers-types" />
 
-interface Env { DB: D1Database }
+interface Env {
+  DB: D1Database;
+  LICENSE_NOTIFY_TOKEN: string; // <-- added
+}
 
 /**
  * Paddle v2 webhook (POST-only)
@@ -9,6 +12,7 @@ interface Env { DB: D1Database }
  * - Extracts basic fields
  * - Upserts customer / subscription
  * - Creates a simple license when status indicates payment success
+ * - Calls internal /api/license-notify to send license email via Kit
  */
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // --- (1) Read raw body and parse JSON
@@ -98,11 +102,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     if (platform !== "unknown") {
       const existing = await env.DB
         .prepare(
-          "SELECT id FROM licenses WHERE customer_id=?1 AND platform=?2"
+          "SELECT id, license_key, notified FROM licenses WHERE customer_id=?1 AND platform=?2"
         )
         .bind(customerRow.id, platform)
-        .first<{ id: number }>();
+        .first<{ id: number; license_key: string; notified: number }>();
 
+      // Only create a new license if none exists
       if (!existing) {
         const licenseKey = cryptoRandom(24); // 24-char token
         await env.DB
@@ -112,7 +117,46 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           .bind(customerRow.id, platform, licenseKey, "active")
           .run();
 
-        // TODO: send onboarding email (ConvertKit/Brevo) with license + instructions
+        // === NEW: Notify via /api/license-notify and mark notified ===
+        try {
+          const notifyPayload = {
+            token: env.LICENSE_NOTIFY_TOKEN,
+            email: customerEmail,
+            license_key: licenseKey,
+            platform: platform, // "nt" | "tv" | "dual"
+          };
+
+          const notifyRes = await fetch(`${new URL(request.url).origin}/api/license-notify`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(notifyPayload),
+          });
+
+          if (notifyRes.ok) {
+            await env.DB.prepare(
+              `UPDATE licenses
+               SET notified = 1,
+                   notified_at = datetime('now')
+               WHERE customer_id = ?1
+                 AND platform = ?2
+                 AND license_key = ?3`
+            ).bind(customerRow.id, platform, licenseKey).run();
+          } else {
+            const errText = await notifyRes.text().catch(() => "");
+            await env.DB.prepare(
+              "INSERT INTO events (type, body) VALUES (?1, ?2)"
+            ).bind("notify.fail", JSON.stringify({ status: notifyRes.status, errText })).run();
+          }
+        } catch (err: any) {
+          await env.DB.prepare(
+            "INSERT INTO events (type, body) VALUES (?1, ?2)"
+          ).bind("notify.error", JSON.stringify({ message: String(err) })).run();
+        }
+        // === END notify ===
+
+      } else {
+        // Optional: on renewals, you might want to re-send a "renewal" email.
+        // For now, we leave existing licenses alone.
       }
     }
   }
